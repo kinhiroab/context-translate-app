@@ -1,1 +1,827 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ContextTranslate Pro - Long-Form AI Interpreter</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        samsung: {
+                            blue: '#1428a0',
+                            accent: '#2196f3',
+                            dark: '#0f172a',
+                            cardDark: '#1e293b'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .rotate-180-flipped { transform: rotate(180deg); }
+        .waveform-bar { transition: height 0.08s ease-in-out; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.4); border-radius: 9999px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(156, 163, 175, 0.7); }
+    </style>
+</head>
+<body class="h-full bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200 flex flex-col overflow-hidden">
 
+    <!-- Top Navigation Header -->
+    <header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 py-3 flex items-center justify-between shrink-0 shadow-sm z-10">
+        <div class="flex items-center space-x-3">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold shadow-md shadow-blue-500/20">
+                <i class="fa-solid fa-language text-lg"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-base leading-none flex items-center gap-2">
+                    ContextTranslate <span class="bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-xs px-2 py-0.5 rounded-full font-medium">Pro</span>
+                </h1>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Gemini-Powered Interpreter Engine</p>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-2">
+            <!-- Navigation Modes Switcher -->
+            <div class="bg-slate-100 dark:bg-slate-800 p-1 rounded-xl flex text-xs font-medium">
+                <button id="viewFeedBtn" onclick="setActiveTab('feed')" class="px-3 py-1.5 rounded-lg transition-all bg-white dark:bg-slate-700 shadow-sm text-blue-600 dark:text-blue-400">
+                    <i class="fa-solid fa-comments mr-1"></i> Live Feed
+                </button>
+                <button id="viewDualBtn" onclick="setActiveTab('dual')" class="px-3 py-1.5 rounded-lg transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
+                    <i class="fa-solid fa-square-half-stroke mr-1"></i> Dual View
+                </button>
+                <button id="viewHistoryBtn" onclick="setActiveTab('history')" class="px-3 py-1.5 rounded-lg transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
+                    <i class="fa-solid fa-clock-rotate-left mr-1"></i> History
+                </button>
+            </div>
+
+            <!-- Settings Button -->
+            <button onclick="openSettingsModal()" class="p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors relative" title="API Key & Prompt Context">
+                <i class="fa-solid fa-gear text-lg"></i>
+                <span id="apiKeyBadge" class="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900 hidden"></span>
+            </button>
+
+            <!-- Dark / Light Theme Toggle -->
+            <button onclick="toggleTheme()" class="p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors">
+                <i id="themeIcon" class="fa-solid fa-moon text-lg"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Context & Technical Glossary Bar -->
+    <section class="bg-white/90 dark:bg-slate-900/90 backdrop-blur border-b border-slate-200 dark:border-slate-800 px-4 py-2 flex flex-wrap items-center justify-between gap-3 shrink-0 text-xs">
+        <!-- Quick Preset Dropdown -->
+        <div class="flex items-center gap-2 flex-1 min-w-[260px]">
+            <span class="font-bold text-slate-500 uppercase tracking-wider text-[10px] shrink-0">Domain:</span>
+            <select id="contextPresetSelect" onchange="applyPresetContext(this.value)" class="w-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium">
+                <option value="business">💼 IT & Tech Business (Acronyms, BSS/OSS, STB)</option>
+                <option value="korean_gov">🏛️ Korean Immigration & Public Office (Formal/Civil)</option>
+                <option value="doctor">🩺 Medical & Health Appointment (Precise Symptoms)</option>
+                <option value="casual">🍻 Casual Conversation (Informal 반말)</option>
+                <option value="custom">✏️ Custom Context Prompt...</option>
+            </select>
+        </div>
+
+        <!-- Language Direction & Formality -->
+        <div class="flex items-center gap-2">
+            <!-- Formality Level -->
+            <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700">
+                <i class="fa-solid fa-graduation-cap text-blue-500"></i>
+                <select id="honorificStyle" class="bg-transparent font-medium focus:outline-none cursor-pointer">
+                    <option value="polite">Formal Polite (존댓말)</option>
+                    <option value="casual">Informal (반말)</option>
+                    <option value="neutral">Direct Technical (중립)</option>
+                </select>
+            </div>
+
+            <!-- Language Pair Switcher -->
+            <div class="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-1 border border-slate-200 dark:border-slate-700 font-medium">
+                <select id="langSpeakerA" class="bg-transparent focus:outline-none cursor-pointer px-1">
+                    <option value="ko-KR">Korean (한국어)</option>
+                    <option value="en-US">English (US)</option>
+                    <option value="ja-JP">Japanese (日本語)</option>
+                    <option value="zh-CN">Chinese (中文)</option>
+                </select>
+                <button onclick="swapLanguages()" class="px-1 text-slate-400 hover:text-blue-500">
+                    <i class="fa-solid fa-arrows-rotate"></i>
+                </button>
+                <select id="langSpeakerB" class="bg-transparent focus:outline-none cursor-pointer px-1">
+                    <option value="en-US">English (US)</option>
+                    <option value="ko-KR">Korean (한국어)</option>
+                    <option value="ja-JP">Japanese (日本語)</option>
+                    <option value="zh-CN">Chinese (中文)</option>
+                </select>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Dynamic Workspace View -->
+    <main class="flex-1 overflow-hidden relative p-3 sm:p-4">
+
+        <!-- 1. LIVE FEED MODE (Continuous Listening Stream) -->
+        <div id="tabFeedView" class="h-full flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
+            <!-- Feed Top Bar -->
+            <div class="px-4 py-2.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/30">
+                <div class="flex items-center gap-2">
+                    <span id="listeningStatusIndicator" class="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
+                    <span id="listeningStatusText" class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Mic Offline</span>
+                </div>
+                <div class="flex items-center gap-2 text-xs">
+                    <span class="text-slate-400" id="feedItemCount">0 utterances</span>
+                    <button onclick="clearCurrentFeed()" class="text-slate-400 hover:text-rose-500 transition-colors" title="Clear Screen">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Interleaved Live Conversation Feed -->
+            <div id="liveFeedContainer" class="flex-1 overflow-y-auto p-4 space-y-4">
+                <div id="emptyFeedNotice" class="h-full flex flex-col items-center justify-center text-center text-slate-400">
+                    <div class="w-16 h-16 rounded-2xl bg-blue-50 dark:bg-blue-950/40 flex items-center justify-center text-blue-500 mb-3 text-2xl">
+                        <i class="fa-solid fa-microphone-lines"></i>
+                    </div>
+                    <p class="font-medium text-sm text-slate-700 dark:text-slate-300">Continuous Meeting Listener Ready</p>
+                    <p class="text-xs max-w-sm mt-1 text-slate-400">Press <strong>Start Continuous Mic</strong> below. Speech will be continuously transcribed and translated with your prompt context.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. DUAL VIEW MODE (180° Rotatable Face-to-Face) -->
+        <div id="tabDualView" class="h-full flex flex-col gap-3 hidden">
+            <!-- Top Speaker Card (Rotatable 180° for Table Facing) -->
+            <div class="flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 flex flex-col justify-between shadow-sm relative overflow-hidden">
+                <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+                        <span class="font-bold text-sm text-blue-600 dark:text-blue-400" id="speakerALabel">Speaker A (Korean)</span>
+                    </div>
+                    <button onclick="toggleFlipSpeaker1()" class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-medium hover:bg-slate-200">
+                        <i class="fa-solid fa-rotate mr-1"></i> Flip 180°
+                    </button>
+                </div>
+
+                <div id="speaker1BoxContent" class="flex-1 overflow-y-auto my-2 space-y-3 transition-transform duration-300">
+                    <div>
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Original Transcript</span>
+                        <p id="speaker1Original" class="text-base font-medium text-slate-800 dark:text-slate-200 italic">"안녕하세요. 오늘 회의 context 설정 test 중입니다."</p>
+                    </div>
+                    <div class="pt-2 border-t border-slate-100 dark:border-slate-800">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-blue-500">Context Translation</span>
+                        <p id="speaker1Translated" class="text-lg font-bold text-blue-600 dark:text-blue-400 mt-0.5">"Hello. We are currently testing the meeting context configuration."</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Speaker Card -->
+            <div class="flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 flex flex-col justify-between shadow-sm relative overflow-hidden">
+                <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                        <span class="font-bold text-sm text-emerald-600 dark:text-emerald-400" id="speakerBLabel">Speaker B (English)</span>
+                    </div>
+                </div>
+
+                <div id="speaker2BoxContent" class="flex-1 overflow-y-auto my-2 space-y-3">
+                    <div>
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Original Transcript</span>
+                        <p id="speaker2Original" class="text-base font-medium text-slate-800 dark:text-slate-200 italic">"Got it. We will review the IPTV STB architecture next."</p>
+                    </div>
+                    <div class="pt-2 border-t border-slate-100 dark:border-slate-800">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-500">Context Translation</span>
+                        <p id="speaker2Translated" class="text-lg font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">"확인했습니다. 다음으로 IPTV 셋톱박스(STB) 아키텍처를 검토하겠습니다."</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. HISTORY & EXPORT MODE -->
+        <div id="tabHistoryView" class="h-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 flex flex-col hidden shadow-sm overflow-hidden">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                <h2 class="font-bold text-base flex items-center gap-2">
+                    <i class="fa-solid fa-clock-rotate-left text-blue-500"></i> Recorded Meeting History
+                </h2>
+                <div class="flex items-center gap-2">
+                    <button onclick="exportHistory('md')" class="px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-300 text-xs font-semibold hover:bg-blue-100">
+                        <i class="fa-solid fa-file-arrow-down mr-1"></i> Export Markdown
+                    </button>
+                    <button onclick="exportHistory('json')" class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-semibold hover:bg-slate-200">
+                        <i class="fa-solid fa-code mr-1"></i> Export JSON
+                    </button>
+                    <button onclick="clearSavedHistory()" class="px-3 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950 text-rose-600 text-xs font-semibold hover:bg-rose-100">
+                        <i class="fa-solid fa-trash mr-1"></i> Clear Saved
+                    </button>
+                </div>
+            </div>
+
+            <div id="historyListContainer" class="flex-1 overflow-y-auto mt-4 space-y-3 pr-1">
+                <!-- Recorded Sessions rendered here -->
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Bottom Audio Controls & Continuous Listener Footer -->
+    <footer class="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 p-3 sm:p-4 shrink-0 shadow-lg z-10">
+        <div class="max-w-4xl mx-auto flex flex-col gap-3">
+            
+            <!-- Real-time Frequency Spectrum Visualizer -->
+            <div class="flex items-center justify-center gap-1.5 h-4 w-full px-4" id="spectrumContainer">
+                <div class="waveform-bar w-1 bg-slate-300 dark:bg-slate-700 rounded-full h-1"></div>
+                <div class="waveform-bar w-1 bg-slate-300 dark:bg-slate-700 rounded-full h-2"></div>
+                <div class="waveform-bar w-1 bg-slate-300 dark:bg-slate-700 rounded-full h-3"></div>
+                <div class="waveform-bar w-1 bg-slate-300 dark:bg-slate-700 rounded-full h-1"></div>
+                <div class="waveform-bar w-1 bg-slate-300 dark:bg-slate-700 rounded-full h-4"></div>
+                <div class="waveform-bar w-1 bg-slate-300 dark:bg-slate-700 rounded-full h-2"></div>
+                <div class="waveform-bar w-1 bg-slate-300 dark:bg-slate-700 rounded-full h-1"></div>
+            </div>
+
+            <!-- Primary Control Buttons -->
+            <div class="flex items-center justify-between gap-3">
+                <!-- Speaker Selector Switch -->
+                <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl border border-slate-200 dark:border-slate-700">
+                    <button id="speakerSelectA" onclick="setActiveSpeaker('A')" class="px-3 py-2 rounded-xl text-xs font-bold transition-all bg-blue-600 text-white shadow-sm">
+                        Speaker A (Korean)
+                    </button>
+                    <button id="speakerSelectB" onclick="setActiveSpeaker('B')" class="px-3 py-2 rounded-xl text-xs font-bold transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900">
+                        Speaker B (English)
+                    </button>
+                </div>
+
+                <!-- Main Continuous Mic Toggle Button -->
+                <button id="btnMainMic" onclick="toggleContinuousMic()" class="flex-1 py-3 px-6 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25 transition-all active:scale-95">
+                    <i id="mainMicIcon" class="fa-solid fa-microphone text-lg"></i>
+                    <span id="mainMicText" class="text-sm">Start Continuous Listening</span>
+                </button>
+            </div>
+        </div>
+    </footer>
+
+    <!-- SETTINGS & CUSTOM CONTEXT MODAL -->
+    <div id="settingsModal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-xl p-6 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <h2 class="text-lg font-bold flex items-center gap-2">
+                    <i class="fa-solid fa-sliders text-blue-500"></i> Settings & Context Engine
+                </h2>
+                <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Gemini API Key Input -->
+            <div class="space-y-1.5">
+                <label class="text-xs font-bold uppercase tracking-wider text-slate-500">Gemini API Key</label>
+                <div class="relative">
+                    <input type="password" id="geminiApiKeyInput" placeholder="AIzaSy... (Paste key here for high-speed translation)" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono">
+                    <button onclick="toggleKeyVisibility()" class="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600">
+                        <i class="fa-solid fa-eye text-xs"></i>
+                    </button>
+                </div>
+                <p class="text-[11px] text-slate-500">Stored strictly in local browser storage (`localStorage`). Never sent to external servers.</p>
+            </div>
+
+            <!-- Custom Context & Acronym Glossary Input -->
+            <div class="space-y-1.5">
+                <label class="text-xs font-bold uppercase tracking-wider text-slate-500">Custom Glossary & Technical Prompt Context</label>
+                <textarea id="customGlossaryInput" rows="4" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-3 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="E.g. We are reviewing the Genie TV / KT DS project. Maintain system names: BSS/OSS, IPTV, STB, Legacy Architecture, and KTDS without translating them literally. Speaker A is lead engineer."></textarea>
+                <p class="text-[11px] text-slate-400">Abbreviations, product names, and specific jargon entered here will guide every Gemini translation.</p>
+            </div>
+
+            <!-- Modal Action Buttons -->
+            <div class="flex justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+                <button onclick="closeSettingsModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100">Cancel</button>
+                <button onclick="saveSettings()" class="px-5 py-2 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20">Save Settings</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Engine JavaScript -->
+    <script>
+        // State Management
+        let activeTab = 'feed'; // 'feed', 'dual', 'history'
+        let activeSpeaker = 'A'; // 'A' (Korean) or 'B' (English)
+        let isContinuousListening = false;
+        let recognition = null;
+        let audioCtx = null;
+        let analyser = null;
+        let animFrameId = null;
+
+        // Custom Settings & History Persistence
+        let geminiApiKey = localStorage.getItem('context_translate_key') || '';
+        let customGlossary = localStorage.getItem('context_translate_glossary') || '';
+        let savedHistory = JSON.parse(localStorage.getItem('context_translate_history') || '[]');
+        let activeFeedItems = [];
+
+        // Preset Domain Prompt Guidelines
+        const PRESET_DOMAINS = {
+            business: "IT & Corporate Tech Meeting domain. Retain tech acronyms (e.g. BSS, OSS, STB, API, Cloud, Architecture). Use professional corporate phrasing.",
+            korean_gov: "Korean Immigration & Government Administrative domain. Use formal polite honorifics (하십시오/해요체) and precise administrative terminology.",
+            doctor: "Medical diagnostic domain. Accurate translation of symptoms, clinical terms, and medical instructions.",
+            casual: "Friendly informal conversation. Use casual informal tone (반말/해체 in Korean)."
+        };
+
+        // Initialize App
+        window.addEventListener('DOMContentLoaded', () => {
+            initSpeechEngine();
+            initAudioContext();
+            loadSettingsIntoUI();
+            renderHistoryList();
+        });
+
+        function toggleTheme() {
+            document.documentElement.classList.toggle('dark');
+            const isDark = document.documentElement.classList.contains('dark');
+            document.getElementById('themeIcon').className = isDark ? 'fa-solid fa-sun text-lg' : 'fa-solid fa-moon text-lg';
+        }
+
+        // Navigation Tabs Controller
+        function setActiveTab(tabName) {
+            activeTab = tabName;
+            
+            const feedView = document.getElementById('tabFeedView');
+            const dualView = document.getElementById('tabDualView');
+            const historyView = document.getElementById('tabHistoryView');
+
+            const btnFeed = document.getElementById('viewFeedBtn');
+            const btnDual = document.getElementById('viewDualBtn');
+            const btnHistory = document.getElementById('viewHistoryBtn');
+
+            // Reset buttons
+            [btnFeed, btnDual, btnHistory].forEach(btn => {
+                btn.className = "px-3 py-1.5 rounded-lg transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white";
+            });
+
+            feedView.classList.add('hidden');
+            dualView.classList.add('hidden');
+            historyView.classList.add('hidden');
+
+            if (tabName === 'feed') {
+                feedView.classList.remove('hidden');
+                btnFeed.className = "px-3 py-1.5 rounded-lg transition-all bg-white dark:bg-slate-700 shadow-sm text-blue-600 dark:text-blue-400 font-semibold";
+            } else if (tabName === 'dual') {
+                dualView.classList.remove('hidden');
+                btnDual.className = "px-3 py-1.5 rounded-lg transition-all bg-white dark:bg-slate-700 shadow-sm text-blue-600 dark:text-blue-400 font-semibold";
+            } else if (tabName === 'history') {
+                historyView.classList.remove('hidden');
+                btnHistory.className = "px-3 py-1.5 rounded-lg transition-all bg-white dark:bg-slate-700 shadow-sm text-blue-600 dark:text-blue-400 font-semibold";
+                renderHistoryList();
+            }
+        }
+
+        function setActiveSpeaker(speaker) {
+            activeSpeaker = speaker;
+            const btnA = document.getElementById('speakerSelectA');
+            const btnB = document.getElementById('speakerSelectB');
+
+            if (speaker === 'A') {
+                btnA.className = "px-3 py-2 rounded-xl text-xs font-bold transition-all bg-blue-600 text-white shadow-sm";
+                btnB.className = "px-3 py-2 rounded-xl text-xs font-bold transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900";
+            } else {
+                btnB.className = "px-3 py-2 rounded-xl text-xs font-bold transition-all bg-emerald-600 text-white shadow-sm";
+                btnA.className = "px-3 py-2 rounded-xl text-xs font-bold transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900";
+            }
+
+            // Restart mic recognition with the new speaker's language if active
+            if (isContinuousListening && recognition) {
+                try { recognition.stop(); } catch(e){}
+            }
+        }
+
+        function toggleFlipSpeaker1() {
+            document.getElementById('speaker1BoxContent').classList.toggle('rotate-180-flipped');
+        }
+
+        // Continuous Speech Recognition Engine with Auto-Restart Loop
+        function initSpeechEngine() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                console.warn('SpeechRecognition API not available in this browser.');
+                return;
+            }
+
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+
+            recognition.onresult = (event) => {
+                let interimTranscript = '';
+                let finalTranscript = '';
+
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript;
+                    } else {
+                        interimTranscript += event.results[i][0].transcript;
+                    }
+                }
+
+                if (finalTranscript.trim()) {
+                    handleFinalUtterance(finalTranscript.trim());
+                }
+            };
+
+            recognition.onerror = (event) => {
+                console.warn('Speech recognition error:', event.error);
+                // Auto recover from quiet periods
+                if (isContinuousListening && (event.error === 'no-speech' || event.error === 'network')) {
+                    restartSpeechRecognition();
+                }
+            };
+
+            recognition.onend = () => {
+                // Persistent loop to keep listening for 2+ hour meetings until manually turned off
+                if (isContinuousListening) {
+                    restartSpeechRecognition();
+                } else {
+                    updateMicUIState(false);
+                }
+            };
+        }
+
+        function restartSpeechRecognition() {
+            if (!recognition || !isContinuousListening) return;
+            try {
+                const lang = activeSpeaker === 'A' 
+                    ? document.getElementById('langSpeakerA').value 
+                    : document.getElementById('langSpeakerB').value;
+                recognition.lang = lang;
+                recognition.start();
+            } catch (e) {
+                // If already running, ignore
+            }
+        }
+
+        function toggleContinuousMic() {
+            isContinuousListening = !isContinuousListening;
+            if (isContinuousListening) {
+                startContinuousListening();
+            } else {
+                stopContinuousListening();
+            }
+        }
+
+        function startContinuousListening() {
+            if (!recognition) {
+                alert('Speech Recognition is not supported in this browser. Please use Chrome or Edge.');
+                isContinuousListening = false;
+                return;
+            }
+
+            const lang = activeSpeaker === 'A' 
+                ? document.getElementById('langSpeakerA').value 
+                : document.getElementById('langSpeakerB').value;
+            recognition.lang = lang;
+
+            try {
+                recognition.start();
+                updateMicUIState(true);
+            } catch (e) {
+                console.error("Mic start failed:", e);
+                updateMicUIState(false);
+            }
+        }
+
+        function stopContinuousListening() {
+            isContinuousListening = false;
+            if (recognition) {
+                try { recognition.stop(); } catch(e){}
+            }
+            updateMicUIState(false);
+        }
+
+        function updateMicUIState(listening) {
+            const btn = document.getElementById('btnMainMic');
+            const btnText = document.getElementById('mainMicText');
+            const btnIcon = document.getElementById('mainMicIcon');
+            const statusDot = document.getElementById('listeningStatusIndicator');
+            const statusText = document.getElementById('listeningStatusText');
+
+            if (listening) {
+                btn.className = "flex-1 py-3 px-6 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-bold flex items-center justify-center gap-2 shadow-lg shadow-rose-500/25 transition-all active:scale-95 animate-pulse";
+                btnText.innerText = "Stop Continuous Listening";
+                btnIcon.className = "fa-solid fa-microphone-slash text-lg";
+                statusDot.className = "w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping";
+                statusText.innerText = "Listening Continuously...";
+                statusText.className = "text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider";
+            } else {
+                btn.className = "flex-1 py-3 px-6 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25 transition-all active:scale-95";
+                btnText.innerText = "Start Continuous Listening";
+                btnIcon.className = "fa-solid fa-microphone text-lg";
+                statusDot.className = "w-2.5 h-2.5 rounded-full bg-slate-400";
+                statusText.innerText = "Mic Offline";
+                statusText.className = "text-xs font-semibold text-slate-500 uppercase tracking-wider";
+            }
+        }
+
+        // Web Audio Spectrum Metering
+        async function initAudioContext() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioCtx.createAnalyser();
+                const source = audioCtx.createMediaStreamSource(stream);
+                source.connect(analyser);
+                analyser.fftSize = 32;
+                renderAudioSpectrum();
+            } catch (err) {
+                console.warn('Microphone stream audio context unavailable:', err);
+            }
+        }
+
+        function renderAudioSpectrum() {
+            if (analyser) {
+                const dataArray = new Uint8Array(analyser.frequencyBinCount);
+                analyser.getByteFrequencyData(dataArray);
+
+                const bars = document.querySelectorAll('#spectrumContainer .waveform-bar');
+                bars.forEach((bar, idx) => {
+                    if (isContinuousListening) {
+                        const val = dataArray[idx % dataArray.length] || 10;
+                        const h = Math.max(4, Math.min(18, Math.round((val / 255) * 18)));
+                        bar.style.height = `${h}px`;
+                        bar.classList.add(activeSpeaker === 'A' ? 'bg-blue-500' : 'bg-emerald-500');
+                    } else {
+                        bar.style.height = `4px`;
+                        bar.classList.remove('bg-blue-500', 'bg-emerald-500');
+                    }
+                });
+            }
+            animFrameId = requestAnimationFrame(renderAudioSpectrum);
+        }
+
+        // Translation Pipeline with Gemini Context Ingestion
+        async function handleFinalUtterance(text) {
+            const speaker = activeSpeaker;
+            const sourceLang = speaker === 'A' ? document.getElementById('langSpeakerA').value : document.getElementById('langSpeakerB').value;
+            const targetLang = speaker === 'A' ? document.getElementById('langSpeakerB').value : document.getElementById('langSpeakerA').value;
+            
+            const presetKey = document.getElementById('contextPresetSelect').value;
+            const domainInstruction = PRESET_DOMAINS[presetKey] || PRESET_DOMAINS.business;
+            const honorific = document.getElementById('honorificStyle').value;
+
+            // Dual View sync
+            if (speaker === 'A') {
+                document.getElementById('speaker1Original').innerText = `"${text}"`;
+                document.getElementById('speaker1Translated').innerHTML = `<i class="fa-solid fa-spinner fa-spin text-blue-500"></i>`;
+            } else {
+                document.getElementById('speaker2Original').innerText = `"${text}"`;
+                document.getElementById('speaker2Translated').innerHTML = `<i class="fa-solid fa-spinner fa-spin text-emerald-500"></i>`;
+            }
+
+            // Perform translation using Gemini
+            const translatedText = await callGeminiTranslation(text, sourceLang, targetLang, domainInstruction, honorific, customGlossary);
+
+            // Update Dual View
+            if (speaker === 'A') {
+                document.getElementById('speaker1Translated').innerText = translatedText;
+            } else {
+                document.getElementById('speaker2Translated').innerText = translatedText;
+            }
+
+            // Append to Interleaved Live Feed
+            const item = {
+                id: Date.now(),
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+                speaker: speaker === 'A' ? 'Speaker A (Korean)' : 'Speaker B (English)',
+                speakerCode: speaker,
+                original: text,
+                translation: translatedText,
+                targetLang
+            };
+
+            activeFeedItems.push(item);
+            savedHistory.unshift(item);
+            localStorage.setItem('context_translate_history', JSON.stringify(savedHistory.slice(0, 500))); // Keep last 500 lines
+
+            renderFeedItem(item);
+        }
+
+        async function callGeminiTranslation(text, sourceLang, targetLang, domainInstruction, honorific, userGlossary) {
+            const apiKey = geminiApiKey || '';
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            const systemPrompt = `You are ContextTranslate Pro, a high-precision real-time meeting interpreter.
+Source Language: ${sourceLang}
+Target Language: ${targetLang}
+Domain Guidance: ${domainInstruction}
+Speech Formality: ${honorific}
+Custom User Glossary & System Context: ${userGlossary || "None specified."}
+
+Rules:
+1. Translate accurately into natural ${targetLang}.
+2. Retain all technical acronyms, system names, product brands, and glossary mapping specified by the user.
+3. Respond ONLY with the translation text. Do not surround with quotes or add explanations.`;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: text }] }],
+                        systemInstruction: { parts: [{ text: systemPrompt }] }
+                    })
+                });
+
+                const data = await response.json();
+                return data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "Translation uncompleted.";
+            } catch (err) {
+                console.error("Gemini API translation error:", err);
+                return `[Translation Error] ${text}`;
+            }
+        }
+
+        // Render Cards into Live Interleaved Feed
+        function renderFeedItem(item) {
+            const emptyNotice = document.getElementById('emptyFeedNotice');
+            if (emptyNotice) emptyNotice.remove();
+
+            const container = document.getElementById('liveFeedContainer');
+            const isA = item.speakerCode === 'A';
+
+            const card = document.createElement('div');
+            card.className = "border border-slate-200 dark:border-slate-800 rounded-2xl p-4 bg-slate-50/50 dark:bg-slate-800/40 shadow-sm space-y-2 transition-all";
+            card.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full ${isA ? 'bg-blue-500' : 'bg-emerald-500'}"></span>
+                        <span class="font-bold text-xs ${isA ? 'text-blue-600 dark:text-blue-400' : 'text-emerald-600 dark:text-emerald-400'}">${item.speaker}</span>
+                        <span class="text-[10px] text-slate-400">${item.timestamp}</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <button onclick="speakDirectText('${encodeURIComponent(item.translation)}', '${item.targetLang}')" class="p-1 text-slate-400 hover:text-blue-500" title="Read Aloud"><i class="fa-solid fa-volume-high text-xs"></i></button>
+                        <button onclick="copyTextDirect('${encodeURIComponent(item.translation)}')" class="p-1 text-slate-400 hover:text-blue-500" title="Copy"><i class="fa-solid fa-copy text-xs"></i></button>
+                    </div>
+                </div>
+                <p class="text-sm text-slate-600 dark:text-slate-300 italic">"${item.original}"</p>
+                <div class="pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
+                    <p class="text-base font-semibold ${isA ? 'text-blue-700 dark:text-blue-300' : 'text-emerald-700 dark:text-emerald-300'}">${item.translation}</p>
+                </div>
+            `;
+
+            container.appendChild(card);
+            container.scrollTop = container.scrollHeight;
+
+            document.getElementById('feedItemCount').innerText = `${activeFeedItems.length} utterances`;
+        }
+
+        function clearCurrentFeed() {
+            activeFeedItems = [];
+            const container = document.getElementById('liveFeedContainer');
+            container.innerHTML = `
+                <div id="emptyFeedNotice" class="h-full flex flex-col items-center justify-center text-center text-slate-400">
+                    <p class="font-medium text-sm text-slate-700 dark:text-slate-300">Feed Cleared</p>
+                    <p class="text-xs max-w-sm mt-1 text-slate-400">Press <strong>Start Continuous Listening</strong> to begin transcribing.</p>
+                </div>
+            `;
+            document.getElementById('feedItemCount').innerText = `0 utterances`;
+        }
+
+        // Speech Synthesis & Clipboard Helpers
+        function speakDirectText(encodedText, langCode) {
+            const text = decodeURIComponent(encodedText);
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = langCode;
+            utterance.rate = 0.95;
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function copyTextDirect(encodedText) {
+            const text = decodeURIComponent(encodedText);
+            const el = document.createElement('textarea');
+            el.value = text;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+        }
+
+        // History Management & Export
+        function renderHistoryList() {
+            const container = document.getElementById('historyListContainer');
+            if (savedHistory.length === 0) {
+                container.innerHTML = `<div class="text-center text-xs text-slate-400 py-8">No saved meeting logs yet.</div>`;
+                return;
+            }
+
+            container.innerHTML = savedHistory.map(item => `
+                <div class="border border-slate-200 dark:border-slate-800 rounded-xl p-3 bg-slate-50 dark:bg-slate-800/50 text-xs space-y-1">
+                    <div class="flex items-center justify-between text-[10px] text-slate-400">
+                        <span class="font-bold text-slate-600 dark:text-slate-300">${item.speaker}</span>
+                        <span>${item.timestamp}</span>
+                    </div>
+                    <p class="italic text-slate-500 dark:text-slate-400">"${item.original}"</p>
+                    <p class="font-semibold text-slate-800 dark:text-slate-200">${item.translation}</p>
+                </div>
+            `).join('');
+        }
+
+        function clearSavedHistory() {
+            if (confirm("Are you sure you want to clear all stored history logs?")) {
+                savedHistory = [];
+                localStorage.removeItem('context_translate_history');
+                renderHistoryList();
+            }
+        }
+
+        function exportHistory(format) {
+            if (savedHistory.length === 0) {
+                alert("No history available to export.");
+                return;
+            }
+
+            let content = "";
+            let mimeType = "text/plain";
+            let filename = `Meeting_Transcript_${new Date().toISOString().slice(0,10)}`;
+
+            if (format === 'md') {
+                filename += ".md";
+                content = `# ContextTranslate Pro Meeting Transcript\nDate: ${new Date().toLocaleDateString()}\n\n` +
+                    savedHistory.map(item => `### [${item.timestamp}] ${item.speaker}\n- **Original:** ${item.original}\n- **Translation:** ${item.translation}\n`).join('\n');
+            } else {
+                filename += ".json";
+                mimeType = "application/json";
+                content = JSON.stringify(savedHistory, null, 2);
+            }
+
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Settings Modal Handlers
+        function openSettingsModal() {
+            document.getElementById('settingsModal').classList.remove('hidden');
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settingsModal').classList.add('hidden');
+        }
+
+        function toggleKeyVisibility() {
+            const input = document.getElementById('geminiApiKeyInput');
+            input.type = input.type === 'password' ? 'text' : 'password';
+        }
+
+        function loadSettingsIntoUI() {
+            if (geminiApiKey) {
+                document.getElementById('geminiApiKeyInput').value = geminiApiKey;
+                document.getElementById('apiKeyBadge').classList.remove('hidden');
+            }
+            if (customGlossary) {
+                document.getElementById('customGlossaryInput').value = customGlossary;
+            }
+        }
+
+        function saveSettings() {
+            const key = document.getElementById('geminiApiKeyInput').value.trim();
+            const glossary = document.getElementById('customGlossaryInput').value.trim();
+
+            geminiApiKey = key;
+            customGlossary = glossary;
+
+            localStorage.setItem('context_translate_key', key);
+            localStorage.setItem('context_translate_glossary', glossary);
+
+            const badge = document.getElementById('apiKeyBadge');
+            if (key) {
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+
+            closeSettingsModal();
+        }
+
+        function applyPresetContext(presetKey) {
+            if (presetKey === 'custom') {
+                openSettingsModal();
+            }
+        }
+
+        function swapLanguages() {
+            const langA = document.getElementById('langSpeakerA');
+            const langB = document.getElementById('langSpeakerB');
+            const temp = langA.value;
+            langA.value = langB.value;
+            langB.value = temp;
+        }
+    </script>
+</body>
+</html>
